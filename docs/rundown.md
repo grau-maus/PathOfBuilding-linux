@@ -145,12 +145,18 @@
     Downloads and installs the auto-updater on finishing program installation.
 * **LICENSE.md**
     MIT licence
+* **linux/**
+    Native Linux support (this fork): `build-simplegraphic.sh` builds the engine from the [SimpleGraphic fork](https://github.com/grau-maus/PathOfBuilding-SimpleGraphic) into `runtime/`, `install.sh` installs PoB for the current user with a menu entry, and `README.md` covers requirements and maintenance.
 * **manifest.xml**
-    Contains file name : SHA-1 hash pairings used to determine which files to update.
+    Contains file name : SHA-1 hash pairings used to determine which files to update. In this fork, its update sources point at `grau-maus/PathOfBuilding-linux`.
+* **PathOfBuilding.sh**
+    Runs PoB natively on Linux straight from the repository, in Dev Mode.
 * **README.md**
     Project overview
 * **runtime-win32.zip**
     Contains PoB executable, update executable, compiled libraries `libcurl` (HTTPS requests), `lcurl` (libcurl bindings for Lua), `lua51` (LuaJIT 5.1), `lzip` (DEFLATE), `SimpleGraphic` (custom 2D graphics host), Lua libraries for Base64, JSON, SHA-1, XML, and fonts.
+* **runtime/** (Linux)
+    Alongside the Windows files, holds the native Linux engine: the `PathOfBuilding` launcher, `libSimpleGraphic.so`, and the Lua modules `lcurl.so`, `lzip.so`, `lua-utf8.so` and `socket.so`. They are built by `linux/build-simplegraphic.sh`, committed to the repository, and excluded from `manifest.xml`, so the auto-updater never replaces them.
 * **tree-2_6.zip**
 * **tree-3_6.zip**
 * **tree-3_7.zip**
@@ -162,7 +168,9 @@
 * **update_manifest.py**
     Generates SHA-1 hashes for files in `manifest.xml`.
     New files have to be manually added to `manifest.xml` to be processed.
+    In this fork, it writes update URLs pointing at `grau-maus/PathOfBuilding-linux`, and `manifest.cfg` excludes the Linux `.so` files.
 * **UpdateApply.lua**
-    Consumes and applies table of update instructions. Updating the runtime itself is done from a separate host environment.
+    Consumes and applies table of update instructions. On Windows, updating the runtime itself is done from a separate host environment.
 * **UpdateCheck.lua**
     Compares local and remote manifests to determine which files need to be updated, downloads these files and `changelog.txt`, rebuilds `manifest.xml` and builds table of update instructions.
+    On non-Windows hosts, it ignores Windows binaries (`runtime="win32"`, `.dll`, `.exe`) and applies platform-neutral runtime files (Lua libraries, fonts) in place, instead of handing them to the Windows update executable.

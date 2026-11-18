@@ -73,7 +73,8 @@ def create_manifest(version: str | None = None, replace: bool = False) -> None:
         logging.critical(f"Manifest configuration file not found in path '{base_path}'")
         return
 
-    base_url = "https://raw.githubusercontent.com/PathOfBuildingCommunity/PathOfBuilding/{branch}/"
+    # Linux fork: installs update from this repository so they keep the Linux-aware updater.
+    base_url = "https://raw.githubusercontent.com/grau-maus/PathOfBuilding-linux/{branch}/"
     parts: list[dict[str, str]] = []
     for part in config.sections():
         url = base_url + config[part]["path"]

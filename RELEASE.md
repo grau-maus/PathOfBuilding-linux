@@ -1,5 +1,24 @@
 # How to release Path of Building Community
 
+## Linux fork
+
+This repository is the Linux fork. Releasing here means **pushing to `master`**. Every Linux install updates its
+program files from that branch, and the change reaches users at their next launch or within 12 hours. The full guide
+is in [linux/README.md](linux/README.md#for-maintainers); this is the checklist:
+
+1. Merge upstream into `master` (`git fetch upstream && git merge upstream/master`).
+   - On `manifest.xml` conflicts, take upstream's file; step 4 regenerates it.
+   - If `src/UpdateCheck.lua` changed, check that the Linux handling (`windowsHost`, `skipFileOnHost`) survived.
+2. If the merge changed `runtime/*.dll`, upstream moved to a new engine. Merge upstream into
+   [the SimpleGraphic fork](https://github.com/grau-maus/PathOfBuilding-SimpleGraphic), run
+   `linux/build-simplegraphic.sh`, check the glibc baseline, and commit the rebuilt `runtime/` binaries in the same
+   push.
+3. Smoke-test with `./PathOfBuilding.sh`: the tree renders, a build imports from a link, and the window closes cleanly.
+4. Run `python3 update_manifest.py --in-place`. Do this after every change, or installs will see hash mismatches.
+5. Push to `master`.
+
+The sections below describe the upstream release process and Windows installers, kept for reference.
+
 ## Prerequisites
 
 ## Choosing a new version number

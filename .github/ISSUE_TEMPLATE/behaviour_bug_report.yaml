@@ -35,6 +35,7 @@ body:
       label: What platform are you running Path of Building on?
       options: 
         - Windows
+        - Linux - Native
         - Linux - Wine
         - Linux - PoB Frontend
         - MacOS

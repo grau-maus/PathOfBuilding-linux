@@ -67,3 +67,9 @@
 # (https://git-scm.com/docs/gitattributes#_executable)
 ###############################################################################
 runtime/*.exe binary
+###############################################################################
+# Native Linux engine binaries and scripts
+###############################################################################
+runtime/*.so binary
+runtime/PathOfBuilding binary
+*.sh text eol=lf

@@ -11,6 +11,17 @@ local sha1 = require("sha1")
 local curl = require("lcurl.safe")
 local lzip = require("lzip")
 
+-- Non-Windows hosts (e.g. the native Linux build) run their own engine binaries, so the
+-- Windows runtime files (DLLs/EXEs) listed in the manifest must never be downloaded or deleted.
+local windowsHost = package.config:sub(1, 1) == "\\"
+local function isWindowsBinary(name, attrib)
+	local lowerName = name:lower()
+	return attrib.runtime == "win32" or lowerName:match("%.dll$") ~= nil or lowerName:match("%.exe$") ~= nil
+end
+local function skipFileOnHost(name, attrib)
+	return not windowsHost and attrib.part == "runtime" and isWindowsBinary(name, attrib)
+end
+
 local globalRetryLimit = 10
 local function downloadFileText(source, file)
 	for i = 1, 5 do
@@ -112,7 +123,7 @@ if localManXML and localManXML[1].elem == "PoBVersion" then
 				if node.attrib.part == "default" then
 					localSource = node.attrib.url
 				end
-			elseif node.elem == "File" then
+			elseif node.elem == "File" and not skipFileOnHost(node.attrib.name, node.attrib) then
 				local fullPath
 				node.attrib.name = node.attrib.name:gsub("{space}", " ")
 				if node.attrib.part == "runtime" then
@@ -120,7 +131,7 @@ if localManXML and localManXML[1].elem == "PoBVersion" then
 				else
 					fullPath = scriptPath .. "/" .. node.attrib.name
 				end
-				localFiles[node.attrib.name] = { sha1 = node.attrib.sha1, part = node.attrib.part, platform = node.attrib.platform, fullPath = fullPath }
+				localFiles[node.attrib.name] = { sha1 = node.attrib.sha1, part = node.attrib.part, platform = node.attrib.platform, runtime = node.attrib.runtime, fullPath = fullPath }
 				if node.attrib.part == "runtime" and node.attrib.name:match("Path of Building") then
 					runtimeExecutable = fullPath
 				end
@@ -155,14 +166,14 @@ if remoteManXML and remoteManXML[1].elem == "PoBVersion" then
 				end
 				remoteSources[node.attrib.part][node.attrib.platform or "any"] = node.attrib.url
 			elseif node.elem == "File" then
-				if not node.attrib.platform or node.attrib.platform == localPlatform then
+				if (not node.attrib.platform or node.attrib.platform == localPlatform) and not skipFileOnHost(node.attrib.name, node.attrib) then
 					local fullPath
 					if node.attrib.part == "runtime" then
 						fullPath = runtimePath .. "/" .. node.attrib.name
 					else
 						fullPath = scriptPath .. "/" .. node.attrib.name
 					end
-					remoteFiles[node.attrib.name] = { sha1 = node.attrib.sha1, part = node.attrib.part, platform = node.attrib.platform, fullPath = fullPath }
+					remoteFiles[node.attrib.name] = { sha1 = node.attrib.sha1, part = node.attrib.part, platform = node.attrib.platform, runtime = node.attrib.runtime, fullPath = fullPath }
 				end
 			end
 		end
@@ -223,7 +234,9 @@ for index, data in ipairs(updateFiles) do
 		UpdateProgress("Downloading %d/%d", index, #updateFiles)
 	end
 	local partSources = remoteSources[data.part]
-	local source = partSources[localPlatform] or partSources["any"]
+	-- The runtime source is only published for win32; its platform-neutral files (Lua modules, fonts)
+	-- live at the same URL, so non-Windows hosts can fall back to it.
+	local source = partSources[localPlatform] or partSources["any"] or (not windowsHost and partSources["win32"])
 	source = source:gsub("{branch}", localBranch)
 	local fileName = scriptPath.."/Update/"..data.name:gsub("[\\/]","{slash}")
 	data.updateFileName = fileName
@@ -295,7 +308,7 @@ for part, platforms in pairs(remoteSources) do
 	end
 end
 for name, data in pairs(remoteFiles) do
-	table.insert(localManXML, { elem = "File", attrib = { name = data.name, sha1 = data.sha1, part = data.part, platform = data.platform } })
+	table.insert(localManXML, { elem = "File", attrib = { name = data.name, sha1 = data.sha1, part = data.part, platform = data.platform, runtime = data.runtime } })
 end 
 xml.SaveXMLFile(localManXML, scriptPath.."/Update/manifest.xml")
 
@@ -310,7 +323,11 @@ for _, data in pairs(updateFiles) do
 		dirStr = dirStr .. dir
 		MakeDir(dirStr)
 	end
-	if data.part == "runtime" then
+	if data.part == "runtime" and not windowsHost then
+		-- Only platform-neutral runtime files reach this point on non-Windows hosts (Windows binaries are
+		-- filtered out above), and nothing holds them locked, so they can be replaced in the normal environment
+		table.insert(ops, 'move "'..data.updateFileName..'" "'..data.fullPath..'"')
+	elseif data.part == "runtime" then
 		-- Core runtime file, will need to update from the basic environment
 		-- These files will be updated on the second pass of the update script, with the first pass being run within the normal environment
 		updateMode = "basic"

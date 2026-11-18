@@ -67,7 +67,7 @@ The easiest way to make and test changes is by setting up a development installa
        cd PathOfBuilding
 
 3. Start Path of Building from the repository by running `./runtime/Path{space}of{space}Building.exe`.
-   * <ins>Note for Linux users:</ins> The executable files should automatically have the correct permissions when cloned fresh. If you still encounter permission issues, run once: `chmod +x ./runtime/Path{space}of{space}Building-PoE2.exe`
+   * <ins>Note for Linux users:</ins> Run `./PathOfBuilding.sh` instead. It starts the native Linux engine committed in `runtime/`, with no Wine needed. See [linux/README.md](linux/README.md) for requirements. If you get a permission error, run once: `chmod +x ./PathOfBuilding.sh ./runtime/PathOfBuilding`
 You can now use the shortcut to run the program from the repository. Running the program in this manner automatically enables "Dev Mode", which has some handy debugging feature:
 * `F5` restarts the program in-place (this is what usually happens when an update is applied).
 * `Ctrl` + `~` toggles the console (Note that this does not work with all keyboard layouts. US layout is a safe bet though).
@@ -95,7 +95,7 @@ To do so [comment out Line 54 to line 58](./src/Launch.lua#L54-L58) of the [Laun
 	--end
 ```
 
-and create a valid manifest.xml file in the ./src directory. Then run the `./runtime/Path{space}of{space}Building.exe` as usual. You should get the typical update popup in the bottom left corner.
+and create a valid manifest.xml file in the ./src directory. Then run the `./runtime/Path{space}of{space}Building.exe` (`./PathOfBuilding.sh` on Linux) as usual. You should get the typical update popup in the bottom left corner.
 
 The manifest.xml file deserves its own in depth document, but usually copying from release and editing accordingly works well enough.
 
@@ -204,7 +204,7 @@ Then, similarly to the EmmyLua example:
   -- debugger:event("wait")  -- Uncomment this line if you want PoB to wait until the debugger is attached.
   ```
 
-  Note that Linux developers using Wine might need to use the Windows debugger instead of using the VSCode debugger. This can be done by:
+  Note for Linux developers: attaching a debugger to the **native** Linux engine (`./PathOfBuilding.sh`) has not been verified yet. The steps below are for running the Windows executable under Wine, where you might need to use the Windows debugger instead of the VSCode debugger. This can be done by:
 
   1. Downloading the .vsix from the VSCode extension page
   2. Copying `extension/{script,runtime}` to the `runtime` folder of the PoB directory (i.e., `runtime/runtime`).
@@ -291,7 +291,7 @@ The extension will automatically skip large files from being preloaded (controll
 
 If you're on windows, consider downloading [git for windows](https://git-scm.com/downloads) and installing git bash. Git bash comes with a variety of typical linux tools such as grep that can make navigating the code base much easier.
 
-If you're using linux you can run the ./runtime/Path{space}of{space}Building.exe executable with wine. You will need to provide a valid wine path to the emmy lua debugger directory.
+If you're using linux, run Path of Building natively with `./PathOfBuilding.sh` (see [linux/README.md](linux/README.md)). Debugging the native engine with EmmyLua has not been verified yet. The known-working route is to run the ./runtime/Path{space}of{space}Building.exe executable with wine. You will need to provide a valid wine path to the emmy lua debugger directory.
 
 ```bash
 # winepath -w ~/.vscode/extensions/tangzx.emmylua-0.8.20-linux-x64/debugger/emmy/windows/x64/
@@ -344,6 +344,10 @@ is a good starting point.
 
 The `./src/Data` folder contains generated files which are created using the scripts in the `./src/Export/Scripts` folder based on Path of Exile game data. 
 If you change any logic/configuration in `./src/Export`, you will need to regenerate the appropriate `./src/Data` files. You can do so by running the `./src/Export` scripts using the `.dat` viewer at `./src/Export/Launch.lua`:
+
+> [!NOTE]
+> The exporter has not been ported to Linux. It runs Windows commands (`cmd`, `dir`) and Windows tools
+> (`bun_extract_file.exe`), so use Windows to run it. Under Wine it may work, but that is untested.
 
 ### Obtain an Oodle extractor
 > [!TIP]   
