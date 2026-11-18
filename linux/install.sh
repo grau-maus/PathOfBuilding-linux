@@ -30,36 +30,8 @@ if [[ "${1:-}" == "--uninstall" ]]; then
 	exit 0
 fi
 
-if [[ ! -x "$POB_ROOT/runtime/PathOfBuilding" || ! -f "$POB_ROOT/runtime/libSimpleGraphic.so" ]]; then
-	echo "error: native engine not built. Run $POB_ROOT/linux/build-simplegraphic.sh first." >&2
-	exit 1
-fi
-
 echo "==> Installing to $PREFIX"
-mkdir -p "$PREFIX"
-
-# Program files (same exclusions as the [program] part of manifest.cfg)
-tar -C "$POB_ROOT/src" -cf - \
-	--exclude=./Export --exclude=./Builds --exclude=./Settings.xml --exclude=./luacov.stats.out \
-	--exclude=./HeadlessWrapper.lua --exclude=./LaunchInstall.lua --exclude=./_SimpleGraphic.def.lua \
-	--exclude='./TreeData/*/*.bin' --exclude=./poe_api_response.json \
-	. | tar -C "$PREFIX" -xf -
-
-# Runtime files, minus the Windows binaries and per-machine state
-tar -C "$POB_ROOT/runtime" -cf - \
-	--exclude='*.dll' --exclude='*.exe' --exclude=./lua/lua-profiler.lua --exclude=./imgui.ini \
-	--exclude=./SimpleGraphic/SimpleGraphic.cfg --exclude=./SimpleGraphic/SimpleGraphic.log \
-	--exclude=./SimpleGraphic/Screenshots \
-	. | tar -C "$PREFIX" -xf -
-
-cp "$POB_ROOT/changelog.txt" "$POB_ROOT/help.txt" "$POB_ROOT/LICENSE.md" "$PREFIX/"
-
-# An installed manifest carries platform + branch; that is what turns off Dev Mode and enables the updater.
-sed -E "s|<Version number=\"([^\"]+)\"[^/]*/>|<Version number=\"\\1\" platform=\"linux\" branch=\"$BRANCH\" />|" \
-	"$POB_ROOT/manifest.xml" > "$PREFIX/manifest.xml"
-grep -q 'platform="linux"' "$PREFIX/manifest.xml" || { echo "error: could not stamp manifest.xml" >&2; exit 1; }
-# Store builds/settings in the user data folder rather than next to the program
-touch "$PREFIX/installed.cfg"
+"$POB_ROOT/linux/stage-app.sh" "$PREFIX" "$BRANCH"
 
 echo "==> Creating launcher $WRAPPER"
 mkdir -p "$BIN_DIR"

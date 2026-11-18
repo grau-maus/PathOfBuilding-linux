@@ -33,6 +33,9 @@ local function downloadFileText(source, file)
 		local escapedUrl = source..easy:escape(file)
 		easy:setopt_url(escapedUrl)
 		easy:setopt(curl.OPT_ACCEPT_ENCODING, "")
+		-- GitHub's API rejects requests without a User-Agent; release downloads redirect to a file host
+		easy:setopt(curl.OPT_USERAGENT, "Path of Building")
+		easy:setopt(curl.OPT_FOLLOWLOCATION, 1)
 		if connectionProtocol then
 			easy:setopt(curl.OPT_IPRESOLVE, connectionProtocol)
 		end
@@ -60,7 +63,7 @@ local function downloadFileText(source, file)
 		globalRetryLimit = globalRetryLimit - 1
 	end
 end
-local function downloadFile(source, file, outName)
+local function downloadFile(source, file, outName, progressLabel)
 	for i = 1, 5 do
 		if i > 1 then
 			ConPrintf("Retrying... (%d of 5)", i)
@@ -69,6 +72,8 @@ local function downloadFile(source, file, outName)
 		local escapedUrl = source..easy:escape(file)
 		easy:setopt_url(escapedUrl)
 		easy:setopt(curl.OPT_ACCEPT_ENCODING, "")
+		easy:setopt(curl.OPT_USERAGENT, "Path of Building")
+		easy:setopt(curl.OPT_FOLLOWLOCATION, 1)
 		if connectionProtocol then
 			easy:setopt(curl.OPT_IPRESOLVE, connectionProtocol)
 		end
@@ -80,7 +85,23 @@ local function downloadFile(source, file, outName)
 			easy:setopt(curl.OPT_SSL_VERIFYHOST, 0)
 			ConPrintf("SSL verification disabled")
 		end
+		if progressLabel and UpdateProgress then
+			-- Report download progress (used for the single large AppImage download)
+			easy:setopt(curl.OPT_NOPROGRESS, false)
+			local lastPercent
+			easy:setopt_progressfunction(function(total, now)
+				local percent = total > 0 and math.floor(now * 100 / total) or 0
+				if percent ~= lastPercent then
+					lastPercent = percent
+					UpdateProgress("%s %d%%", progressLabel, percent)
+				end
+				return true
+			end)
+		end
 		local file = io.open(outName, "wb+")
+		if not file then
+			return nil, "can't write "..outName
+		end
 		easy:setopt_writefunction(file)
 		local _, error = easy:perform()
 		easy:close()
@@ -107,7 +128,7 @@ runtimePath = runtimePath or runtimeFallback or scriptPath
 
 -- Load and process local manifest
 local localVer
-local localPlatform, localBranch
+local localPlatform, localBranch, localRelease
 local localFiles = { }
 local localManXML = xml.LoadXMLFile(scriptPath.."/manifest.xml")
 local localSource
@@ -119,6 +140,7 @@ if localManXML and localManXML[1].elem == "PoBVersion" then
 				localVer = node.attrib.number
 				localPlatform = node.attrib.platform
 				localBranch = node.attrib.branch
+				localRelease = node.attrib.release
 			elseif node.elem == "Source" then
 				if node.attrib.part == "default" then
 					localSource = node.attrib.url
@@ -144,6 +166,99 @@ if not localVer or not localSource or not localBranch or not next(localFiles) th
 	return nil, "Invalid local manifest"
 end
 localSource = localSource:gsub("{branch}", localBranch)
+
+-- AppImage builds are read-only, so they update as a whole: compare this image's release with the latest GitHub
+-- release and download the new image next to the running one. Launch:ApplyUpdate("appimage") swaps it in.
+local appImagePath = not windowsHost and os.getenv("APPIMAGE")
+if appImagePath and appImagePath ~= "" then
+	local dkjson = require("dkjson")
+	local releaseApi = os.getenv("POB_RELEASE_API") or "https://api.github.com/repos/grau-maus/PathOfBuilding-linux/releases/latest"
+
+	local function releaseNumbers(tag)
+		-- "v2.68.1-linux.3" -> { 2, 68, 1, 3 }
+		local numbers = { }
+		for n in tostring(tag):gmatch("%d+") do
+			table.insert(numbers, tonumber(n))
+		end
+		return numbers
+	end
+	local function isNewerRelease(remoteTag, currentTag)
+		local remote, current = releaseNumbers(remoteTag), releaseNumbers(currentTag)
+		for i = 1, math.max(#remote, #current) do
+			if (remote[i] or 0) ~= (current[i] or 0) then
+				return (remote[i] or 0) > (current[i] or 0)
+			end
+		end
+		return false
+	end
+	local function shellQuote(s)
+		return "'"..s:gsub("'", "'\\''").."'"
+	end
+	local function sha256File(path)
+		local pipe = io.popen("sha256sum -- "..shellQuote(path).." 2>/dev/null")
+		local out = pipe and pipe:read("*a") or ""
+		if pipe then pipe:close() end
+		return out:match("^(%x+)")
+	end
+
+	if not localRelease then
+		ConPrintf("Update check failed: AppImage manifest has no release tag")
+		return nil, "This AppImage doesn't record its release, so it can't update itself.\nDownload the latest AppImage from the releases page."
+	end
+	local releaseText, errMsg = downloadFileText(releaseApi, "")
+	local release = releaseText and dkjson.decode(releaseText)
+	if not release or not release.tag_name then
+		ConPrintf("Update check failed: couldn't read the latest release")
+		return nil, "Couldn't check for a new AppImage release.\nReason: "..(errMsg or (release and release.message) or "invalid response").."\nCheck your internet connectivity.\nIf you are using a proxy, specify it in Options."
+	end
+	if not isNewerRelease(release.tag_name, localRelease) then
+		ConPrintf("No update available (running %s, latest release %s).", localRelease, release.tag_name)
+		return "none"
+	end
+
+	local asset, checksumAsset
+	for _, candidate in ipairs(release.assets or { }) do
+		if candidate.name:match("x86_64%.AppImage$") then
+			asset = candidate
+		elseif candidate.name:match("x86_64%.AppImage%.sha256$") then
+			checksumAsset = candidate
+		end
+	end
+	if not asset then
+		ConPrintf("Update check failed: release %s has no AppImage", release.tag_name)
+		return nil, "Release "..release.tag_name.." has no AppImage to download."
+	end
+	local expectedHash = asset.digest and asset.digest:match("^sha256:(%x+)$")
+	if not expectedHash and checksumAsset then
+		local checksumText = downloadFileText(checksumAsset.browser_download_url, "")
+		expectedHash = checksumText and checksumText:match("^(%x+)")
+	end
+	if not expectedHash then
+		return nil, "Release "..release.tag_name.." has no checksum, so its AppImage can't be verified."
+	end
+
+	-- Download next to the running image, so the swap in Launch:ApplyUpdate is an atomic rename on one filesystem
+	local updatePath = appImagePath..".update"
+	if sha256File(updatePath) == expectedHash:lower() then
+		ConPrintf("Using AppImage from previous update attempt '%s'", updatePath)
+	else
+		ConPrintf("Downloading %s...", asset.name)
+		local ok, downloadErr = downloadFile(asset.browser_download_url, "", updatePath, "Downloading")
+		if not ok then
+			os.remove(updatePath)
+			local dir = appImagePath:match("^(.*)/[^/]*$") or "."
+			return nil, "Couldn't download the new AppImage.\nReason: "..tostring(downloadErr).."\nThe AppImage's folder ("..dir..") must be writable for updates."
+		end
+		if sha256File(updatePath) ~= expectedHash:lower() then
+			os.remove(updatePath)
+			ConPrintf("Hash mismatch on '%s'", updatePath)
+			return nil, "The downloaded AppImage failed verification.\nCheck your internet connectivity, or try again later."
+		end
+	end
+	os.execute("chmod 755 "..shellQuote(updatePath))
+	ConPrintf("AppImage %s is ready.", release.tag_name)
+	return "appimage"
+end
 
 -- Download and process remote manifest
 local remoteVer

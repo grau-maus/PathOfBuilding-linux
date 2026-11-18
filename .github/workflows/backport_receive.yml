@@ -8,6 +8,8 @@ on:
 
 jobs:
     apply-patch:
+        # Upstream-only: skipped on forks such as the Linux fork
+        if: github.repository_owner == 'PathOfBuildingCommunity'
         runs-on: ubuntu-latest
         steps:
             - name: Checkout

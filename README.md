@@ -59,6 +59,12 @@ Head over to the [Releases](https://github.com/PathOfBuildingCommunity/PathOfBui
 Requires 64-bit Linux with glibc 2.38+ (Ubuntu 24.04+, Linux Mint 22+, Fedora 39+, Debian 13+, Arch), OpenSSL 3
 and OpenGL ES/EGL drivers (included with Mesa and NVIDIA).
 
+**AppImage:** download `PathOfBuilding-<version>-x86_64.AppImage` from the
+[latest release](https://github.com/grau-maus/PathOfBuilding-linux/releases/latest), make it executable
+(`chmod +x`), and run it. It updates itself with each release.
+
+**Or from git:**
+
 ```bash
 git clone https://github.com/grau-maus/PathOfBuilding-linux.git
 cd PathOfBuilding-linux

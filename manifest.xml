@@ -379,7 +379,7 @@
 	<File name="Data/Vestigial.lua" part="program" sha1="9662791f2323ed5fb2f69f320df081ce73f83e4f" />
 	<File name="Data/Viscera.lua" part="program" sha1="2381f7a9e76a094f4890a0e8eb825df120a0ae6a" />
 	<File name="GameVersions.lua" part="program" sha1="a476a52da1bf25bbb6978bee2b92dd1d5a3047c4" />
-	<File name="Launch.lua" part="program" sha1="49aa75bfb3aa68bd38daf6b6870012794e40cf89" />
+	<File name="Launch.lua" part="program" sha1="2a31c4139dd639e579837bfd4a4ea32be6e0a322" />
 	<File name="LaunchServer.lua" part="program" sha1="f15bdfbedaf887e19556490dce49b720f8365379" />
 	<File name="Modules/AddImplicitPopup.lua" part="program" sha1="f68d391d10b95c0feef70b7e8e82326a745dcb3b" />
 	<File name="Modules/Build.lua" part="program" sha1="561ec3e79257b3a18d735ef6ff8b1b3f0cb78966" />
@@ -418,7 +418,7 @@
 	<File name="Modules/ToastNotification.lua" part="program" sha1="87abe18f2c81a8df77e7e79248730e81ca5e03c5" />
 	<File name="Modules/Utils.lua" part="program" sha1="7fcb8936ef089aa9472d69920e206afe7cecf3c8" />
 	<File name="UpdateApply.lua" part="program" sha1="d7e47a29feff219c1ec3c6e4a19eb85b47691c26" />
-	<File name="UpdateCheck.lua" part="program" sha1="c352715125e05cac2652274d2dba54a94a159c47" />
+	<File name="UpdateCheck.lua" part="program" sha1="558a01a802d77df9cc848b9c3e9d9188e74f81dd" />
 	<File name="abseil_dll.dll" part="runtime" runtime="win32" sha1="e9c19e2bce146c5b41f71bb1e367ca055a10a94e" />
 	<File name="concrt140.dll" part="runtime" runtime="win32" sha1="e9999d2d3c0ec93c6dfcbe59f05269fb947f9973" />
 	<File name="d3dcompiler_47.dll" part="runtime" runtime="win32" sha1="27a4eff95e7f4a359718fda7138a528147969b27" />

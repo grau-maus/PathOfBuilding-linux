@@ -15,7 +15,11 @@ is in [linux/README.md](linux/README.md#for-maintainers); this is the checklist:
    push.
 3. Smoke-test with `./PathOfBuilding.sh`: the tree renders, a build imports from a link, and the window closes cleanly.
 4. Run `python3 update_manifest.py --in-place`. Do this after every change, or installs will see hash mismatches.
-5. Push to `master`.
+5. Push to `master`. This ships to installer (git) users.
+6. Tag and push a Linux release, for example `git tag v2.68.1-linux.1 && git push origin v2.68.1-linux.1`.
+   The **Linux AppImage release** workflow checks, builds, smoke-tests and publishes the AppImage, and AppImage
+   users then update to it. Use the `manifest.xml` version plus a Linux revision that counts up from 1. See
+   [linux/README.md](linux/README.md#publishing-an-appimage-release).
 
 The sections below describe the upstream release process and Windows installers, kept for reference.
 

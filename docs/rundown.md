@@ -146,7 +146,15 @@
 * **LICENSE.md**
     MIT licence
 * **linux/**
-    Native Linux support (this fork): `build-simplegraphic.sh` builds the engine from the [SimpleGraphic fork](https://github.com/grau-maus/PathOfBuilding-SimpleGraphic) into `runtime/`, `install.sh` installs PoB for the current user with a menu entry, and `README.md` covers requirements and maintenance.
+    Native Linux support (this fork):
+    * `build-simplegraphic.sh` builds the engine from the [SimpleGraphic fork](https://github.com/grau-maus/PathOfBuilding-SimpleGraphic) into `runtime/`.
+    * `stage-app.sh` assembles a runnable program folder, used by `install.sh` and `build-appimage.sh`.
+    * `install.sh` installs PoB for the current user, with a menu entry.
+    * `build-appimage.sh` builds the release AppImage.
+    * `smoke-test.sh` starts an AppImage on a virtual display and checks it loads.
+    * `README.md` covers requirements and maintenance.
+
+    The `Linux AppImage release` workflow uses these scripts to publish releases.
 * **manifest.xml**
     Contains file name : SHA-1 hash pairings used to determine which files to update. In this fork, its update sources point at `grau-maus/PathOfBuilding-linux`.
 * **PathOfBuilding.sh**
@@ -174,3 +182,4 @@
 * **UpdateCheck.lua**
     Compares local and remote manifests to determine which files need to be updated, downloads these files and `changelog.txt`, rebuilds `manifest.xml` and builds table of update instructions.
     On non-Windows hosts, it ignores Windows binaries (`runtime="win32"`, `.dll`, `.exe`) and applies platform-neutral runtime files (Lua libraries, fonts) in place, instead of handing them to the Windows update executable.
+    When running from a Linux AppImage (`$APPIMAGE` is set), it instead compares the image's release tag with the latest GitHub release. If a newer one exists, it downloads and verifies the new AppImage and returns the `appimage` update mode, which `Launch.lua` applies by swapping the file and restarting.

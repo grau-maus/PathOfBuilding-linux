@@ -13,7 +13,8 @@ on:
 
 jobs:
   backport:
-    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'pob2'))
+    # Upstream-only: skipped on forks such as the Linux fork
+    if: github.repository_owner == 'PathOfBuildingCommunity' && (github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'pob2')))
     runs-on: ubuntu-latest
     steps:
       - name: Determine PR number

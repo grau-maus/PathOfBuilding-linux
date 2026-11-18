@@ -4,6 +4,8 @@ on:
         types: [update-simple-graphic]
 jobs:
     update:
+        # Upstream-only: skipped on forks such as the Linux fork
+        if: github.repository_owner == 'PathOfBuildingCommunity'
         runs-on: ubuntu-latest
         steps:
             - name: Checkout
