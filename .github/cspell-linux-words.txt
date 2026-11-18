@@ -2,10 +2,13 @@
 # Words match regardless of case.
 
 # Linux fork: native engine, packaging and repository names
+appdir
 appimage
 appimagetool
+appstream
 dcmake
 dvcpkg
+getenvcopy
 gles
 grau
 imgui
@@ -19,7 +22,10 @@ libxi
 libxinerama
 libxrandr
 maus
+nolisten
+objdump
 pathofbuilding
+portfile
 simplegraphic
 xauth
 
@@ -33,6 +39,7 @@ lsproj
 luarc
 modelproj
 msysgit
+opencontainers
 robinraju
 sqlproj
 vcproj
