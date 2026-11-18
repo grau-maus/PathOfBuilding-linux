@@ -183,6 +183,10 @@ linux/smoke-test.sh dist/PathOfBuilding-v2.68.1-linux.1-x86_64.AppImage   # need
 `linux/smoke-test.sh` always runs PoB on its own invisible display (`xvfb-run -a`) with a temporary home folder, so
 it never opens a window on your desktop or touches your builds.
 
+**Spellcheck:** the Spell Checker workflow checks only the files a push changes. It uses upstream's shared
+dictionaries plus this fork's word list, `.github/cspell-linux-words.txt`. If it flags a legitimate word, such as a
+package name, add the word there.
+
 ### How updates reach Linux installs
 
 **AppImage installs** compare the `release` tag recorded in their `manifest.xml` with the release GitHub marks as
