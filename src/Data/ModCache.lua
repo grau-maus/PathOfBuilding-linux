@@ -14441,7 +14441,7 @@ c["Attack Hits against Bleeding Enemies have 15% chance to Blind"]={nil,"Attack 
 c["Attack Hits against Bleeding Enemies have 25% chance to Blind"]={nil,"Attack Hits against Bleeding Enemies have 25% chance to Blind "}
 c["Attack Hits against Blinded Enemies have 15% chance to Maim"]={nil,"Attack Hits against Blinded Enemies have 15% chance to Maim "}
 c["Attack Hits against Blinded Enemies have 25% chance to Maim"]={nil,"Attack Hits against Blinded Enemies have 25% chance to Maim "}
-c["Attack Projectiles Return to you"]={nil,"Attack Projectiles Return to you "}
+c["Attack Projectiles Return to you"]={{[1]={flags=1024,keywordFlags=0,name="ProjectileReturn",type="FLAG",value=true}},nil}
 c["Attack Projectiles always inflict Bleeding and Maim, and Knock Back Enemies"]={{[1]={flags=1025,keywordFlags=0,name="BleedChance",type="BASE",value=100},[2]={flags=1025,keywordFlags=0,name="EnemyKnockbackChance",type="BASE",value=100}},nil}
 c["Attack Skills Cost Life instead of 10% of Mana Cost"]={{[1]={flags=1,keywordFlags=0,name="HybridManaAndLifeCost_Life",type="BASE",value=10}},nil}
 c["Attack Skills Cost Life instead of 20% of Mana Cost"]={{[1]={flags=1,keywordFlags=0,name="HybridManaAndLifeCost_Life",type="BASE",value=20}},nil}
@@ -19097,8 +19097,7 @@ c["Projectiles Pierce all Targets while you have Phasing"]={{[1]={[1]={type="Con
 c["Projectiles Pierce all Targets within 3.5 metres"]={{[1]={flags=0,keywordFlags=0,name="PierceAllTargets",type="FLAG",value=true}},nil}
 c["Projectiles Pierce an additional Target"]={{[1]={flags=0,keywordFlags=0,name="PierceCount",type="BASE",value=1}},nil}
 c["Projectiles Pierce, Fork or Chain an additional time at random"]={nil,"Pierce, Fork or Chain an additional time at random "}
-c["Projectiles Return to you"]={nil,"Return to you "}
-c["Projectiles Return to you Projectiles are fired in random directions"]={nil,"Return to you Projectiles are fired in random directions "}
+c["Projectiles Return to you"]={{[1]={flags=1024,keywordFlags=0,name="ProjectileReturn",type="FLAG",value=true}},nil}
 c["Projectiles Return to you from final target"]={nil,"Return to you from final target "}
 c["Projectiles Split towards +1 targets"]={{[1]={flags=0,keywordFlags=0,name="SplitCount",type="BASE",value=1}},nil}
 c["Projectiles are fired in random directions"]={nil,"fired in random directions "}
@@ -19158,8 +19157,7 @@ c["Projectiles have 4% chance to be able to Chain when colliding with terrain pe
 c["Projectiles have 5 metres maximum Direct Flight"]={{}," metres maximum Direct Flight "}
 c["Projectiles have 5 metres maximum Direct Flight 40% more Projectile Speed"]={{[1]={flags=1024,keywordFlags=0,name="ProjectileSpeed",type="BASE",value=5}}," metres maximum Direct Flight 40% more  "}
 c["Projectiles have 50% chance for an additional Projectile when Forking"]={{[1]={flags=1024,keywordFlags=0,name="ProjectileCount",type="BASE",value=50}}," for an additional  when Forking "}
-c["Projectiles have 50% chance to Return to you"]={{}," to Return to you "}
-c["Projectiles have 50% chance to Return to you Projectiles are fired in random directions"]={{[1]={flags=1024,keywordFlags=0,name="ProjectileCount",type="BASE",value=50}}," to Return to you  are fired in random directions "}
+c["Projectiles have 50% chance to Return to you"]={{[1]={flags=1024,keywordFlags=0,name="ProjectileReturnChance",type="BASE",value=50}},nil}
 c["Projectiles that have Chained gain 10% of Non-Chaos Damage as extra Chaos Damage"]={{[1]={[1]={stat="Chain",threshold=1,type="StatThreshold"},flags=1024,keywordFlags=0,name="NonChaosDamageGainAsChaos",type="BASE",value=10}},nil}
 c["Projectiles that have Chained gain 12% of Non-Chaos Damage as extra Chaos Damage"]={{[1]={[1]={stat="Chain",threshold=1,type="StatThreshold"},flags=1024,keywordFlags=0,name="NonChaosDamageGainAsChaos",type="BASE",value=12}},nil}
 c["Projectiles that have Chained gain 28% of Non-Chaos Damage as extra Chaos Damage"]={{[1]={[1]={stat="Chain",threshold=1,type="StatThreshold"},flags=1024,keywordFlags=0,name="NonChaosDamageGainAsChaos",type="BASE",value=28}},nil}
@@ -20007,9 +20005,9 @@ c["Requires Class Scion Allocates Inquisitor if you have the matching modifier o
 c["Requires Class Scion Allocates Juggernaut if you have the matching modifier on Forbidden Flame"]={nil,"Requires Class Scion Allocates Juggernaut if you have the matching modifier on Forbidden Flame "}
 c["Requires Class Scion Allocates Juggernaut if you have the matching modifier on Forbidden Flesh"]={nil,"Requires Class Scion Allocates Juggernaut if you have the matching modifier on Forbidden Flesh "}
 c["Requires Class Scion Allocates Necromancer if you have the matching modifier on Forbidden Flame"]={nil,"Requires Class Scion Allocates Necromancer if you have the matching modifier on Forbidden Flame "}
-end)();(function()
 c["Requires Class Scion Allocates Necromancer if you have the matching modifier on Forbidden Flesh"]={nil,"Requires Class Scion Allocates Necromancer if you have the matching modifier on Forbidden Flesh "}
 c["Requires Class Scion Allocates Occultist if you have the matching modifier on Forbidden Flame"]={nil,"Requires Class Scion Allocates Occultist if you have the matching modifier on Forbidden Flame "}
+end)();(function()
 c["Requires Class Scion Allocates Occultist if you have the matching modifier on Forbidden Flesh"]={nil,"Requires Class Scion Allocates Occultist if you have the matching modifier on Forbidden Flesh "}
 c["Requires Class Scion Allocates Pathfinder if you have the matching modifier on Forbidden Flame"]={nil,"Requires Class Scion Allocates Pathfinder if you have the matching modifier on Forbidden Flame "}
 c["Requires Class Scion Allocates Pathfinder if you have the matching modifier on Forbidden Flesh"]={nil,"Requires Class Scion Allocates Pathfinder if you have the matching modifier on Forbidden Flesh "}

@@ -2396,6 +2396,15 @@ local specialModList = {
 		flag("CannotChain", nil, ModFlag.Projectile),
 		flag("CannotFork", nil, ModFlag.Projectile),
 	},
+	["attack projectiles return to you"] = {
+		flag("ProjectileReturn", nil, ModFlag.Projectile),
+	},
+	["projectiles return to you"] = {
+		flag("ProjectileReturn", nil, ModFlag.Projectile),
+	},
+	["projectiles have (%d+)%% chance to return to you"] = function(num) return {
+		mod("ProjectileReturnChance", "BASE", num, nil, ModFlag.Projectile),
+	} end,
 	["projectiles cannot continue after colliding with targets"] = {
 		flag("CannotPierce", nil, ModFlag.Projectile),
 		flag("CannotChain", nil, ModFlag.Projectile),

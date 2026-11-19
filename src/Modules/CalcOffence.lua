@@ -2319,6 +2319,11 @@ function calcs.offence(env, actor, activeSkill)
 			output.Time = 1 / skillData.triggerRate
 			output.TriggerTime = output.Time
 			output.Speed = skillData.triggerRate
+			if output.Cooldown and output.Repeats then
+				-- A triggered skill can never exceed its own cooldown rate
+				output.Speed = m_min(output.Speed, 1 / output.Cooldown * output.Repeats)
+				output.Time = 1 / output.Speed
+			end
 			skillData.showAverage = false
 		else
 			local baseTime
@@ -2515,6 +2520,13 @@ function calcs.offence(env, actor, activeSkill)
 	end
 	-- Other Misc DPS multipliers (like custom source)
 	skillData.dpsMultiplier = ( skillData.dpsMultiplier or 1 ) * ( 1 + skillModList:Sum("INC", skillCfg, "DPS") / 100 ) * skillModList:More(skillCfg, "DPS")
+	-- Returning projectiles hit again on the way back, dealing reduced damage where a
+	-- source applies it (e.g. Returning Projectiles Support)
+	local returnChance = skillModList:Flag(skillCfg, "ProjectileReturn") and 100 or (skillModList:Sum("BASE", skillCfg, "ProjectileReturnChance") or 0)
+	if returnChance > 0 then
+		local returningDamage = 1 + (skillModList:Sum("BASE", skillCfg, "ReturningProjectileDamage") or 0) / 100
+		skillData.dpsMultiplier = skillData.dpsMultiplier * (1 + returnChance / 100 * returningDamage)
+	end
 	if activeSkill.skillTypes[SkillType.Brand] and not skillData.countsAttachedBrandsInDamage then
 		skillData.dpsMultiplier = skillData.dpsMultiplier * output.AttachedBrandCount
 		output.SkillDPSMultiplier = (output.SkillDPSMultiplier or 1) * output.AttachedBrandCount
