@@ -45,3 +45,6 @@ runtime/SimpleGraphic/Screenshots
 
 .emmyrc.json
 .luarc.json
+
+# Linux AppImage builds (linux/build-appimage.sh)
+dist/

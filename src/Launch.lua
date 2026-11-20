@@ -333,6 +333,18 @@ function launch:ApplyUpdate(mode)
 		LoadModule("UpdateApply")("Update/opFile.txt")
 		Restart()
 		self.doRestart = "Updating..."
+	elseif mode == "appimage" then
+		-- Linux AppImage: UpdateCheck downloaded and verified the new image next to the running one. Replacing the
+		-- file is safe while this process runs (it keeps the old image open until it exits), so swap it in, start
+		-- the new image and exit.
+		local appImagePath = os.getenv("APPIMAGE")
+		local ok, errMsg = os.rename(appImagePath..".update", appImagePath)
+		if not ok then
+			self:ShowErrMsg("Couldn't replace the AppImage: %s", tostring(errMsg))
+			return
+		end
+		SpawnProcess(appImagePath)
+		Exit()
 	end
 end
 

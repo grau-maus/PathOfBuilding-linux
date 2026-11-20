@@ -1358,6 +1358,18 @@ return {
 ["pierce_%"] = {
 	mod("PierceChance", "BASE", nil),
 },
+["projectiles_return"] = {
+	flag("ProjectileReturn"),
+},
+["attack_projectiles_return"] = {
+	flag("ProjectileReturn"),
+},
+["projectile_return_%_chance"] = {
+	mod("ProjectileReturnChance", "BASE", nil),
+},
+["support_return_returning_projectiles_damage_+%_final"] = {
+	mod("ReturningProjectileDamage", "BASE", nil),
+},
 ["always_pierce"] = {
 	flag("PierceAllTargets"),
 },
@@ -1443,7 +1455,7 @@ return {
 	mod("Damage", "MORE", nil, 0, 0, { type = "Condition", var = "ReturningProjectile" }),
 },
 ["returning_projectiles_always_pierce"] = {
-	flag("PierceAllTargets", { type = "Condition", var = "ReturningProjectile" }),
+	flag("ProjectileReturnAlwaysPierce"),
 },
 ["support_barrage_attack_time_+%_per_projectile_fired"] = {
 	mod("SkillAttackTime", "MORE", nil, 0, 0, { type = "Condition", varList = { "UsingBow", "UsingWand" }}, { type = "PerStat", stat = "ProjectileCount" }),

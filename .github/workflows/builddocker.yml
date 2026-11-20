@@ -3,6 +3,8 @@ on:
  workflow_dispatch:
 jobs:
   build-and-push-image:
+    # Upstream-only: skipped on forks such as the Linux fork
+    if: github.repository_owner == 'PathOfBuildingCommunity'
     runs-on: ubuntu-latest
     permissions:
       contents: read

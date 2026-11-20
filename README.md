@@ -1,6 +1,10 @@
 # Path of Building Community
 ## Welcome to Path of Building, an offline build planner for Path of Exile!
 
+> **This is a Linux fork** of [Path of Building Community](https://github.com/PathOfBuildingCommunity/PathOfBuilding)
+> that runs natively on Linux, without Wine. See [Linux (native)](#linux-native) below. Windows users should use the
+> upstream project.
+
 <p float="middle">
   <img alt="Tree tab" src="https://github.com/user-attachments/assets/0826b7ab-84ba-440f-be52-2f216f13e75c" width="48%" />
   <img alt="Items tab" src="https://github.com/user-attachments/assets/e5af1326-7e22-43d8-ab12-aa5500da611a" width="48%" />
@@ -45,10 +49,32 @@
 * Other features:
   * You can import passive tree, items, and skills from existing characters
   * Share builds with other users by generating a share code
-  * Automatic updating; most updates will only take a couple of seconds to apply
+  * Automatic updating; most updates will only take a couple of seconds to apply (on Linux, the engine itself is
+    updated with `git pull` instead; see below)
 
 ## Download
 Head over to the [Releases](https://github.com/PathOfBuildingCommunity/PathOfBuilding/releases) page to download the install wizard or portable zip.
+
+### Linux (native)
+Requires 64-bit Linux with glibc 2.38+ (Ubuntu 24.04+, Linux Mint 22+, Fedora 39+, Debian 13+, Arch), OpenSSL 3
+and OpenGL ES/EGL drivers (included with Mesa and NVIDIA).
+
+**AppImage:** download `PathOfBuilding-<version>-x86_64.AppImage` from the
+[latest release](https://github.com/grau-maus/PathOfBuilding-linux/releases/latest), make it executable
+(`chmod +x`), and run it. It updates itself with each release.
+
+**Or from git:**
+
+```bash
+git clone https://github.com/grau-maus/PathOfBuilding-linux.git
+cd PathOfBuilding-linux
+linux/install.sh
+```
+
+This adds Path of Building to your application menu. Program updates arrive automatically. For engine updates, run
+`git pull && linux/install.sh`. See [linux/README.md](linux/README.md) for details, troubleshooting, and how the
+fork is maintained. Please report Linux-specific issues
+[to this fork](https://github.com/grau-maus/PathOfBuilding-linux/issues), not upstream.
 
 ## Changelog
 You can find the full version history [here](CHANGELOG.md).

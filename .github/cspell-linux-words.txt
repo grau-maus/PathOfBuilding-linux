@@ -1,0 +1,47 @@
+# Extra words for the spellcheck workflow (spellcheck.yml), appended to the shared PoB dictionaries it downloads.
+# Words match regardless of case.
+
+# Linux fork: native engine, packaging and repository names
+appdir
+appimage
+appimagetool
+appstream
+dcmake
+dvcpkg
+getenvcopy
+gles
+grau
+imgui
+libegl
+libgl
+libgles
+libglvnd
+libx
+libxcursor
+libxi
+libxinerama
+libxrandr
+maus
+nolisten
+objdump
+pathofbuilding
+portfile
+simplegraphic
+xauth
+
+# Already in upstream files the fork edits (.gitattributes, .gitignore and the upstream-only workflows)
+astextplain
+buildx
+choco
+contribs
+dbproj
+lsproj
+luarc
+modelproj
+msysgit
+opencontainers
+robinraju
+sqlproj
+vcproj
+wixproj
+wwaproj

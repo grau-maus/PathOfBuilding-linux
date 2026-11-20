@@ -1,0 +1,113 @@
+name: Linux AppImage release
+run-name: Linux release ${{ inputs.tag || github.ref_name }}
+
+# Publishes a GitHub release with the Path of Building AppImage when a Linux release tag is pushed:
+#   git tag v2.68.1-linux.1 && git push origin v2.68.1-linux.1
+# The tag is the upstream version (manifest.xml) plus a Linux revision. Re-run for an existing tag from the
+# Actions tab to rebuild its AppImage. AppImages update themselves from the release marked "latest".
+on:
+  push:
+    tags:
+      - 'v*-linux.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to build and publish, e.g. v2.68.1-linux.1'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: linux-release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  appimage:
+    runs-on: ubuntu-24.04
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ env.TAG }}
+          fetch-depth: 0
+
+      - name: Check tag matches manifest version
+        run: |
+          version=$(grep -oP '<Version number="\K[^"]+' manifest.xml)
+          if [[ ! "$TAG" =~ ^v${version//./\\.}-linux\.[0-9]+$ ]]; then
+            echo "::error::Tag $TAG does not match manifest.xml version $version (expected v$version-linux.N)"
+            exit 1
+          fi
+
+      - name: Check manifest.xml is up to date
+        run: |
+          python3 update_manifest.py
+          if ! diff -q manifest.xml manifest-updated.xml; then
+            echo "::error::manifest.xml is out of date. Run 'python3 update_manifest.py --in-place', commit, and re-tag."
+            exit 1
+          fi
+          rm manifest-updated.xml
+
+      - name: Check engine binaries
+        id: engine
+        run: |
+          for f in PathOfBuilding libSimpleGraphic.so lcurl.so lzip.so lua-utf8.so socket.so; do
+            test -f "runtime/$f" || { echo "::error::runtime/$f is missing"; exit 1; }
+          done
+          glibc=$(objdump -T runtime/PathOfBuilding runtime/*.so | grep -o 'GLIBC_[0-9.]*' | sort -uV | tail -1 | cut -d_ -f2)
+          echo "Engine binaries require glibc $glibc"
+          echo "glibc=$glibc" >> "$GITHUB_OUTPUT"
+
+      - name: Install smoke-test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb xauth libgl1-mesa-dri libegl1 libegl-mesa0 libgles2
+
+      - name: Build AppImage
+        run: linux/build-appimage.sh "$TAG" dist
+
+      - name: Smoke test
+        run: linux/smoke-test.sh "dist/PathOfBuilding-$TAG-x86_64.AppImage"
+
+      - name: Write release notes
+        run: |
+          appimage="PathOfBuilding-$TAG-x86_64.AppImage"
+          cat > notes.md <<EOF
+          ## Install (Linux, x86-64)
+
+          1. Download \`$appimage\`.
+          2. Make it executable: \`chmod +x $appimage\` (or tick "Allow executing file as program" in its properties).
+          3. Run it.
+
+          Keep the AppImage in a folder you own, such as \`~/Applications\`: PoB updates itself by replacing the
+          file when a new release is published. Builds and settings are stored in \`~/.local/share/Path of Building/\`.
+
+          **Requires:** glibc ${{ steps.engine.outputs.glibc }} or newer (e.g. Ubuntu 24.04+, Linux Mint 22+, Fedora 39+,
+          Debian 13+, Arch), OpenSSL 3, and OpenGL ES/EGL drivers (included with Mesa and NVIDIA).
+          See [linux/README.md](https://github.com/${{ github.repository }}/blob/$TAG/linux/README.md) for troubleshooting.
+
+          EOF
+          # Changes since the previous Linux release. The first release has no previous tag, and comparing against
+          # the start of the repository would list every upstream pull request, so it gets a short note instead.
+          previous=$(git tag --list 'v*-linux.*' --sort=-v:refname | grep -vxF "$TAG" | head -1 || true)
+          if [[ -n "$previous" ]]; then
+            gh api "repos/${{ github.repository }}/releases/generate-notes" \
+              -f tag_name="$TAG" -f previous_tag_name="$previous" --jq .body >> notes.md
+          else
+            echo "First native Linux AppImage release, based on Path of Building ${TAG%-linux.*}." >> notes.md
+          fi
+          cat notes.md
+
+      - name: Publish release
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+            gh release edit "$TAG" --notes-file notes.md
+          else
+            gh release create "$TAG" dist/* --verify-tag --latest \
+              --title "Path of Building $TAG (Linux AppImage)" --notes-file notes.md
+          fi

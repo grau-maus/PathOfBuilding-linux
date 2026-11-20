@@ -37,6 +37,11 @@ jobs:
             ${{ env.CONFIG_URL }}/extra-en-dict.txt
             ${{ env.CONFIG_URL }}/contribs-dict.txt
 
+      - name: Add Linux fork words
+        run: |
+          echo >> ignore-dict.txt
+          cat .github/cspell-linux-words.txt >> ignore-dict.txt
+
       - name: Run cspell
         uses: streetsidesoftware/cspell-action@v8
         with:

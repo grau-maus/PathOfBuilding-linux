@@ -8,6 +8,8 @@ on:
   workflow_dispatch:
 jobs:
   push-beta:
+    # Upstream-only: skipped on forks such as the Linux fork
+    if: github.repository_owner == 'PathOfBuildingCommunity'
     runs-on: ubuntu-22.04
     steps:
             - name: Set line endings

@@ -12,6 +12,8 @@ env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 jobs:
   release:
+    # Upstream-only: skipped on forks such as the Linux fork
+    if: github.repository_owner == 'PathOfBuildingCommunity'
     runs-on: windows-latest
     steps:
             - name: Checkout

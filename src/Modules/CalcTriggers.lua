@@ -71,9 +71,20 @@ local function defaultComparer(env, uuid, source, triggerRate)
 	return (not source and cachedSpeed) or (cachedSpeed and cachedSpeed > (triggerRate or 0))
 end
 
+-- Trigger source rate for a cached skill; config.hitMultiplier lets triggers that fire per
+-- hit (rather than per attack) use an estimated hit rate, e.g. multi-projectile attacks
+local function getTriggerSourceRate(env, uuid, config)
+	local cachedData = GlobalCache.cachedData[env.mode][uuid]
+	local rate = cachedData and (cachedData.HitSpeed or cachedData.Speed) or nil
+	if rate and config and config.hitMultiplier then
+		rate = rate * (config.hitMultiplier(env, uuid, cachedData) or 1)
+	end
+	return rate
+end
+
 -- Identify the trigger action skill for trigger conditions, take highest Attack Per Second
 -- sourceCache holds this override's complete candidate calculations and rejected cost probes
-local function findTriggerSkill(env, skill, source, triggerRate, comparer, minimumCost, sourceCache)
+local function findTriggerSkill(env, skill, source, triggerRate, comparer, minimumCost, sourceCache, config)
 	local comparer = comparer or defaultComparer
 
 	local uuid = cacheSkillUUID(skill, env)
@@ -94,8 +105,13 @@ local function findTriggerSkill(env, skill, source, triggerRate, comparer, minim
 	end
 
 	local cachedData = GlobalCache.cachedData[env.mode][uuid]
-	if cachedData and comparer(env, uuid, source, triggerRate) and (not minimumCost or (cachedData[minimumCost.stat] or 0) >= minimumCost.minimum) and (skill.skillFlags and not skill.skillFlags.disable) and (skill.skillCfg and not skill.skillCfg.skillCond["usedByMirage"]) and not skill.skillTypes[SkillType.OtherThingUsesSkill] then
-		return skill, GlobalCache.cachedData[env.mode][uuid].HitSpeed or GlobalCache.cachedData[env.mode][uuid].Speed, uuid
+	local sourceRate = getTriggerSourceRate(env, uuid, config)
+	local compareResult = comparer(env, uuid, source, triggerRate)
+	if config and config.hitMultiplier then
+		compareResult = sourceRate and (not source or sourceRate > (triggerRate or 0))
+	end
+	if cachedData and compareResult and (not minimumCost or (cachedData[minimumCost.stat] or 0) >= minimumCost.minimum) and (skill.skillFlags and not skill.skillFlags.disable) and (skill.skillCfg and not skill.skillCfg.skillCond["usedByMirage"]) and not skill.skillTypes[SkillType.OtherThingUsesSkill] then
+		return skill, sourceRate, uuid
 	end
 	return source, triggerRate, source and cacheSkillUUID(source, env)
 end
@@ -423,7 +439,7 @@ local function defaultTriggerHandler(env, config)
 	if config.triggeredSkillCond or config.triggerSkillCond then
 		for _, skill in ipairs(env.player.activeSkillList) do
 			if config.triggerSkillCond and config.triggerSkillCond(env, skill) and (not sourceWeaponFlag or skill.skillFlags[sourceWeaponFlag]) and (not isTriggered(skill) or actor.mainSkill.skillFlags.globalTrigger or config.allowTriggered) and skill ~= actor.mainSkill then
-				source, trigRate, uuid = findTriggerSkill(env, skill, source, trigRate, config.comparer, config.minimumCostPerUse, sourceCache)
+				source, trigRate, uuid = findTriggerSkill(env, skill, source, trigRate, config.comparer, config.minimumCostPerUse, sourceCache, config)
 			end
 			if config.triggeredSkillCond and config.triggeredSkillCond(env,skill) then
 				t_insert(triggeredSkills, packageSkillDataForSimulation(skill, env))
@@ -482,11 +498,19 @@ local function defaultTriggerHandler(env, config)
 			end
 
 			--Account for skills that can hit multiple times per use
-			if source and GlobalCache.cachedData[env.mode][uuid] and source.skillPartName and source.skillPartName:match("(.*)All(.*)Projectiles(.*)") and source.skillFlags.projectile then
+			if source and GlobalCache.cachedData[env.mode][uuid] and source.skillPartName and source.skillPartName:match("(.*)All(.*)Projectiles(.*)") and source.skillFlags.projectile and not config.hitMultiplier then
 				local multiHitDpsMult = GlobalCache.cachedData[env.mode][uuid].Env.player.output.ProjectileCount or 1
 				trigRate = trigRate * multiHitDpsMult
 				if breakdown then
 					t_insert(breakdown.EffectiveSourceRate, s_format("x %.2f ^8(%d projectiles hit)", multiHitDpsMult, multiHitDpsMult))
+				end
+			end
+
+			--Account for triggers that fire per hit rather than per attack
+			if config.hitMultiplier and source then
+				local hitMult = config.hitMultiplier(env, uuid, GlobalCache.cachedData[env.mode][uuid]) or 1
+				if hitMult > 1 and breakdown then
+					t_insert(breakdown.EffectiveSourceRate, s_format("x %.2f ^8(estimated hits per attack)", hitMult))
 				end
 			end
 
@@ -1197,7 +1221,36 @@ local configTable = {
 			return {triggerName = "Summon Holy Relic",
 				   actor = env.minion,
 				   triggeredSkills = {{ uuid = cacheSkillUUID(env.minion.mainSkill, env), cd = env.minion.mainSkill.skillData.cooldown}},
-				   triggerSkillCond = function(env, skill) return skill.skillTypes[SkillType.Attack] end}
+				   triggerSkillCond = function(env, skill) return skill.skillTypes[SkillType.Attack] end,
+				   -- The relic's nova triggers on each attack HIT; estimate hits per attack from
+				   -- the attack's projectile count, pierce, chain and return so the trigger rate
+				   -- can reach the cooldown cap. Pierce and chain assume further targets to hit.
+				   hitMultiplier = function(env, uuid, cachedData)
+					   local cachedEnv = cachedData and cachedData.Env
+					   local out = cachedEnv and cachedEnv.player.output
+					   local mainSkill = cachedEnv and cachedEnv.player.mainSkill
+					   if not out or not mainSkill then
+						   return 1
+					   end
+					   -- Pierce and chain hits need further targets to hit; assume up to
+					   -- two extra targets per projectile so pierce-all skills (e.g.
+					   -- Lancing Steel) stay a reasonable estimate
+					   local extraHits = m_min(out.PierceCount or 0, 2) + m_min(out.Chain or 0, 2)
+					   local hitsPerProjectile = 1 + extraHits
+					   -- Returning projectiles hit again on the way back; without the
+					   -- always-pierce stat they hit a single target on the return
+					   local returnChance = mainSkill.skillModList:Flag(mainSkill.skillCfg, "ProjectileReturn") and 100 or (mainSkill.skillModList:Sum("BASE", mainSkill.skillCfg, "ProjectileReturnChance") or 0)
+					   if returnChance > 0 then
+						   local returnHits = 1
+						   if mainSkill.skillModList:Flag(mainSkill.skillCfg, "ProjectileReturnAlwaysPierce") then
+							   -- Returning projectiles pierce all targets, hitting as many
+							   -- enemies as the outbound pass
+							   returnHits = hitsPerProjectile
+						   end
+						   hitsPerProjectile = hitsPerProjectile + returnChance / 100 * returnHits
+					   end
+					   return m_max(1, m_floor((out.ProjectileCount or 1) * hitsPerProjectile))
+				   end}
 		end
 	end,
 	["cast when damage taken"] = function(env)
