@@ -4250,7 +4250,6 @@ local function cloneSpecForJewelComparison(spec)
 	specCopy.ignoredNodes = copyTable(spec.ignoredNodes, true)
 	specCopy.splitPersonalityPath = { }
 	specCopy.allocSubgraphNodes = { }
-	specCopy.allocExtendedNodes = { }
 	specCopy.subGraphs = { }
 
 	return specCopy

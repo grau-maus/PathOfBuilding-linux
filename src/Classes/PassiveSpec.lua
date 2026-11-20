@@ -76,9 +76,6 @@ function PassiveSpecClass:Init(treeVersion, convert)
 	-- List of nodes allocated in subgraphs; used to maintain allocation when loading, and when rebuilding subgraphs
 	self.allocSubgraphNodes = { }
 
-	-- List of cluster nodes to allocate
-	self.allocExtendedNodes = { }
-
 	-- Table of jewels equipped in this tree
 	-- Keys are node IDs, values are items
 	self.jewels = { }
@@ -315,13 +312,6 @@ function PassiveSpecClass:ImportFromNodeList(className, classId, ascendClassId, 
 			end
 		else
 			t_insert(self.allocSubgraphNodes, id)
-		end
-	end
-	for _, id in pairs(self.allocExtendedNodes) do
-		local node = self.nodes[id]
-		if node then
-			node.alloc = true
-			self.allocNodes[id] = node
 		end
 	end
 
@@ -1892,9 +1882,6 @@ function PassiveSpecClass:BuildClusterJewelGraphs()
 			node.alloc = true
 			if not self.allocNodes[nodeId] then
 				self.allocNodes[nodeId] = node
-				if not isValueInArray(self.allocExtendedNodes, nodeId) then
-					t_insert(self.allocExtendedNodes, nodeId)
-				end
 			end
 		end
 	end

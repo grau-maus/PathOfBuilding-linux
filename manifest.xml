@@ -144,13 +144,13 @@
 	<File name="Classes/FolderListControl.lua" part="program" sha1="2fec0874200a71563536324cfb1ea8f75984e53d" />
 	<File name="Classes/GemSelectControl.lua" part="program" sha1="8954e020052121d13122873b578b87e0bb7c60fc" />
 	<File name="Classes/GemTooltip.lua" part="program" sha1="aa0ce7d2eb619fc6b6e55aec9767320bee187343" />
-	<File name="Classes/ImportTab.lua" part="program" sha1="dfce9256337d581fe45d684faf50352b05ec622e" />
+	<File name="Classes/ImportTab.lua" part="program" sha1="29128d05facbc984139799f0c604012579614072" />
 	<File name="Classes/Item.lua" part="program" sha1="9ec02b4b1dbcbf38d7e0253c754062a63060677e" />
 	<File name="Classes/ItemDBControl.lua" part="program" sha1="9d8611dea39ab3ad05acd72d8d35c483aa9cf8cf" />
 	<File name="Classes/ItemListControl.lua" part="program" sha1="01546a91c647cb978ffb757cbe75a7afaa2d0cba" />
 	<File name="Classes/ItemSetListControl.lua" part="program" sha1="5ff494b708b1b633f0cf4157e30ad295c1044ed4" />
 	<File name="Classes/ItemSlotControl.lua" part="program" sha1="994edcab55ba363f6c82c497f7d5353927172020" />
-	<File name="Classes/ItemsTab.lua" part="program" sha1="8e29911cf40cf5c0b4db37c2ab32c2f854b2df01" />
+	<File name="Classes/ItemsTab.lua" part="program" sha1="d21fe4d8580b8ccc7e13174afc7145ed037d64c8" />
 	<File name="Classes/LabelControl.lua" part="program" sha1="7a8f38d225087ba6941537444b0ea0ec0ac150cd" />
 	<File name="Classes/ListControl.lua" part="program" sha1="9223f7e90e7fa3f67ad0cf8224e1266e59b9681f" />
 	<File name="Classes/MinionListControl.lua" part="program" sha1="655a6ddb06ba75011e51d5a6130db8cf7a9f3895" />
@@ -162,7 +162,7 @@
 	<File name="Classes/NotesTab.lua" part="program" sha1="d62f9ee51c906fcc06cdb08f80bb8f3224c9cce4" />
 	<File name="Classes/PartyTab.lua" part="program" sha1="7cb4377e06b52737cfd5d1757b0b7ef190bb45f1" />
 	<File name="Classes/PassiveMasteryControl.lua" part="program" sha1="5459a7be287c86050fb5176c3cad996e8434447b" />
-	<File name="Classes/PassiveSpec.lua" part="program" sha1="e8eb961ac7d902fcb18c6c53fff72cd21bba81fc" />
+	<File name="Classes/PassiveSpec.lua" part="program" sha1="2f5e0fe2715211134e6c29c1c2062d05d7acf0c1" />
 	<File name="Classes/PassiveSpecListControl.lua" part="program" sha1="24bedd3c52a837bfd19143a6428fe3f88a4211a8" />
 	<File name="Classes/PassiveTree.lua" part="program" sha1="71bc9a089a989f89838ed1508f1b80328b5cabd7" />
 	<File name="Classes/PassiveTreeView.lua" part="program" sha1="174f9a063a76863bc060e877e2409c051a244da3" />

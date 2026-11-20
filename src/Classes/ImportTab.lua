@@ -1209,6 +1209,10 @@ function ImportTabClass:ImportPassiveTreeAndJewels(charData, deleteJewels)
 		)
 	self.build.treeTab:SetActiveSpec(self.build.treeTab.activeSpec)
 	self.build.spec:BuildClusterJewelGraphs()
+	-- The character's cluster allocations are applied now; drop them so later rebuilds (jewel swaps, edits)
+	-- don't re-allocate cluster nodes the user has since removed
+	self.build.spec.jewel_data = nil
+	self.build.spec.extended_hashes = { }
 	self.build.spec:AddUndoState()
 	self.build.characterLevel = charData.level or 100
 	self.build.characterLevelAutoMode = false
