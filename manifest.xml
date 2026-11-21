@@ -136,6 +136,8 @@
 	<File name="Classes/ConfigTab.lua" part="program" sha1="2d6edf9a0005d84c73b771043333798e82b7d5b2" />
 	<File name="Classes/Control.lua" part="program" sha1="00217659e9d711d7c3d8e97d42a19ae9c78c6f8f" />
 	<File name="Classes/ControlHost.lua" part="program" sha1="e2bbba0d34995d363dd11ab0e989c8e84fd1717c" />
+	<File name="Classes/CurrencyExchange.lua" part="program" sha1="06a4d777b9472e4fb7b45ff829b403fc229643db" />
+	<File name="Classes/CurrencyPriceListControl.lua" part="program" sha1="9565c47f12c0fcf7cf692a3b9eb0db36aa308fb7" />
 	<File name="Classes/DraggerControl.lua" part="program" sha1="99b86b751df018a33714b000c9eed240a7101b8e" />
 	<File name="Classes/DropDownControl.lua" part="program" sha1="358243d4c302369d480358cf4959bbce2db50b10" />
 	<File name="Classes/EditControl.lua" part="program" sha1="b551d57d4addbd7e409644b42c29acea3659fae4" />
@@ -188,12 +190,12 @@
 	<File name="Classes/Tooltip.lua" part="program" sha1="7a5edb4d796f1443af135d69491844db780a37fc" />
 	<File name="Classes/TooltipHost.lua" part="program" sha1="0f5706e242368618e2c4d17de63e41653a1d0d5f" />
 	<File name="Classes/TradeHelpers.lua" part="program" sha1="981b58d794cad03f595bdd64e57274fa008bf45d" />
-	<File name="Classes/TradeQuery.lua" part="program" sha1="e36064670a7ee1cca228d32ae9266fa7a7c02ef4" />
+	<File name="Classes/TradeQuery.lua" part="program" sha1="063ec6d1eba67c8b8bd6e8794ba46b605ee5ce20" />
 	<File name="Classes/TradeQueryGenerator.lua" part="program" sha1="59f48443fffa9beac3dd71c7323ef1bb778be0de" />
 	<File name="Classes/TradeQueryRateLimiter.lua" part="program" sha1="2e0853cc35292f769040c1104e7877f791a79c0c" />
 	<File name="Classes/TradeQueryRequests.lua" part="program" sha1="a70ccb5bbaff3a951d3280b9f73988ecc60e85ea" />
 	<File name="Classes/TradeStatWeightMultiplierListControl.lua" part="program" sha1="b83a9eb1dad0e363acb3ce0cd28bb5e43fe08ced" />
-	<File name="Classes/TreeTab.lua" part="program" sha1="3430101a627fbf1c6728f9b57afae7a08917b2f1" />
+	<File name="Classes/TreeTab.lua" part="program" sha1="2c828212947b26029360d57434b9858a2c5ec0fe" />
 	<File name="Classes/UndoHandler.lua" part="program" sha1="586afba2e6fea36e34c1109d21498bd86d6ead93" />
 	<File name="Data/Bases/amulet.lua" part="program" sha1="6c567cde1c73f313dc4a5d215adaf72a86db722c" />
 	<File name="Data/Bases/axe.lua" part="program" sha1="ceb8668a588ecf02aaf0babee9e9908317cba58f" />

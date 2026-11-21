@@ -8,6 +8,7 @@
 local dkjson = require "dkjson"
 local itemSlotHelper = require("Modules.ItemSlotHelper")
 local tradeHelpers = require("Classes.TradeHelpers")
+local currencyExchange = require("Classes.CurrencyExchange")
 
 local get_time = os.time
 local t_insert = table.insert
@@ -117,142 +118,33 @@ function TradeQueryClass:ConvertCurrencyToDivs(currencyId, amount)
 	end
 end
 
-local generalCurrencies = {
-	["Metadata/Items/Currency/CurrencyModValues"] = true,
-	["Metadata/Items/Currency/CurrencyRerollRare"] = true
-}
-
 -- Method to pull down and interpret the Currency Exchange JSON endpoint data
 function TradeQueryClass:PullCXData()
 	local realm = self.pbRealm
 	if realm == "" then
 		return
 	end
-	local now = get_time()
 	-- Limit Currency Conversion request to 1 per hour
-	if self.pbCurrencyConversion[realm] and ((now - self.pbCurrencyConversion[realm].timestamp) < 61 * 60) then
+	if self.pbCurrencyConversion[realm] and ((get_time() - self.pbCurrencyConversion[realm].timestamp) < 61 * 60) then
 		return
 	end
-
-	-- download json containing short names for each item id
-	launch:DownloadPage("https://www.pathofexile.com/api/trade/data/static", function(response, errMsg)
+	currencyExchange.Fetch(realm, function(data, errMsg)
 		if errMsg then
-			self:SetNotice(self.controls.pbNotice, "Error: " .. tostring(errMsg))
+			self:SetNotice(self.controls.pbNotice, errMsg)
+		end
+		if not data or (self.pbCurrencyConversion[realm] and self.pbCurrencyConversion[realm].timestamp == data.timestamp) then
 			return
 		end
-
-		local static = dkjson.decode(response.body)
-		if not static then
-			self:SetNotice(self.controls.pbNotice, "Could not decode static trade data")
-			return
+		-- for each league, the value of each currency (by trade site short name) in divine orbs
+		local out = { timestamp = data.timestamp }
+		for leagueName, league in pairs(data.leagues) do
+			local leagueEntries = { }
+			for id, price in pairs(league.prices) do
+				leagueEntries[data.items[id].short] = price.divs
+			end
+			out[leagueName] = leagueEntries
 		end
-		local url = "https://web.poecdn.com/api/currency-exchange"
-		if realm ~= "pc" then
-			url = url .. "/" .. realm
-		end
-		local hourSeconds = 60 * 60
-		url = url .. "/" .. ((math.floor(now / hourSeconds) - 1) * hourSeconds)
-		launch:DownloadPage(url, function(response, errMsg)
-			if errMsg then
-				self:SetNotice(self.controls.pbNotice, "Error: " .. tostring(errMsg))
-				return
-			end
-			local json = dkjson.decode(response.body)
-			if not json then
-				self:SetNotice(self.controls.pbNotice, "Malformed CX API response")
-				return
-			end
-
-			if json.error then
-				self:SetNotice(self.controls.pbNotice, "CX error: " .. json.error.message)
-				return
-			end
-			local success, result = pcall(function()
-				-- short currency names for each base item type id
-				local currencyNames = {}
-				local currencyIdMap = {}
-				for id, name in pairs(require("Data.CurrencyNames")) do
-					currencyIdMap[name] = id
-				end
-				for _, entry in ipairs(static.result[1].entries) do
-					if entry.id ~= "sep" then
-						local itemID = currencyIdMap[entry.text]
-						-- Not every bulk trade item is exported as currency.
-						if itemID then
-							currencyNames[itemID] = entry.id
-						end
-					end
-				end
-
-				local out = {}
-				for _, entry in ipairs(json.markets) do
-					local league = entry.league
-					if not out[league] then
-						out[league] = {}
-					end
-					local leagueOut = out[league]
-
-					-- Base type IDs are in the form Metadata/Items/.../CurrencyModValues.
-					local fromID = entry.market_pair[1]
-					local toID = entry.market_pair[2]
-
-					-- Normalize entries to price each currency in chaos or divines.
-					if generalCurrencies[fromID] and toID ~= "Metadata/Items/Currency/CurrencyModValues" then
-						fromID, toID = toID, fromID
-					end
-
-					local fromShort = currencyNames[fromID]
-					local toShort = currencyNames[toID]
-					if not fromShort or not generalCurrencies[toID] or entry.lowest_ratio[fromID] == 0 then
-						goto CXContinue
-					end
-
-					local newEntry = {
-						currency = toShort,
-						price = entry.lowest_ratio[toID] / entry.lowest_ratio[fromID],
-						stock = entry.highest_stock[fromID]
-					}
-					-- Only keep the most popular option.
-					if not leagueOut[fromShort] or leagueOut[fromShort].stock < newEntry.stock then
-						leagueOut[fromShort] = newEntry
-					end
-					::CXContinue::
-				end
-
-				-- Convert any chaos prices to divine equivalent prices.
-				for leagueName, leagueEntries in pairs(out) do
-					for from, to in pairs(leagueEntries) do
-						if to.currency ~= "divine" then
-							local divEntry = leagueEntries[to.currency]
-							if not divEntry then
-								leagueEntries[from] = nil
-							else
-								leagueEntries[from] = divEntry.price * to.price
-							end
-						end
-					end
-					for from, to in pairs(leagueEntries) do
-						if type(to) == "table" then
-							leagueEntries[from] = to.price
-						end
-					end
-					if not next(leagueEntries) then
-						out[leagueName] = nil
-					else
-						leagueEntries.divine = 1
-					end
-				end
-
-				return out
-			end)
-			if not success then
-				self:SetNotice(self.controls.pbNotice, "Failed to process CX response")
-				ConPrintf("CX error: %s", result)
-				return
-			end
-			result.timestamp = now
-			self.pbCurrencyConversion[realm] = result
-		end)
+		self.pbCurrencyConversion[realm] = out
 	end)
 end
 
@@ -651,6 +543,10 @@ Highest Weight - Displays the order retrieved from trade]]
 	end)
 
 	self.controls.pbNotice = new("LabelControl"):LabelControl({"BOTTOMRIGHT", nil, "BOTTOMRIGHT"}, {-row_height - pane_margins_vertical - row_vertical_padding, -pane_margins_vertical, 300, row_height}, "")
+	self.controls.currencyPrices = new("ButtonControl"):ButtonControl({"BOTTOMLEFT", nil, "BOTTOMLEFT"}, {pane_margins_horizontal, -pane_margins_vertical, 150, row_height}, "Currency prices...", function()
+		self:OpenCurrencyPricesPopup()
+	end)
+	self.controls.currencyPrices.tooltipText = "Look up Currency Exchange prices (orbs, runegrafts, tattoos, omens, essences and more)\nfrom the game's hourly snapshot. Needs no login."
 
 	-- used in PopupDialog:Draw()
 	local function scrollBarFunc()
@@ -686,6 +582,86 @@ Highest Weight - Displays the order retrieved from trade]]
 	end
 	self:PullCXData()
 	main:OpenPopup(pane_width, self.pane_height, "Trader", self.controls, nil, nil, "close", (scrollBarShown and scrollBarFunc or nil))
+end
+
+-- Popup listing Currency Exchange prices from the hourly snapshot, filtered by league, category and name
+function TradeQueryClass:OpenCurrencyPricesPopup()
+	local controls = { }
+	local rows = { }
+	local realm = self.pbRealm ~= "" and self.pbRealm or "pc"
+	local state = { search = "" }
+	local popupWidth, popupHeight = 760, 560
+
+	local function relist()
+		wipeTable(rows)
+		local leagueData = state.data and state.league and state.data.leagues[state.league]
+		if leagueData then
+			for id, price in pairs(leagueData.prices) do
+				local item = state.data.items[id]
+				if item and (not state.category or item.category == state.category)
+						and (state.search == "" or item.name:lower():find(state.search, 1, true)) then
+					t_insert(rows, {
+						name = item.name,
+						category = item.category or "",
+						divs = price.divs,
+						chaos = leagueData.chaosPerDiv and price.divs * leagueData.chaosPerDiv,
+						stock = price.stock,
+						volume = price.volume,
+					})
+				end
+			end
+		end
+		controls.list:ReSort()
+		controls.list:SelectIndex(nil)
+	end
+
+	controls.leagueLabel = new("LabelControl"):LabelControl({"TOPLEFT", nil, "TOPLEFT"}, {20, 20, 0, 16}, "^7League:")
+	controls.league = new("DropDownControl"):DropDownControl({"LEFT", controls.leagueLabel, "RIGHT"}, {6, 0, 170, 20}, { }, function(index, value)
+		state.league = value
+		currencyExchange.selectedLeague = value
+		relist()
+	end)
+	controls.categoryLabel = new("LabelControl"):LabelControl({"LEFT", controls.league, "RIGHT"}, {16, 0, 0, 16}, "^7Category:")
+	controls.category = new("DropDownControl"):DropDownControl({"LEFT", controls.categoryLabel, "RIGHT"}, {6, 0, 200, 20}, { "All categories" }, function(index, value)
+		state.category = index > 1 and value or nil
+		relist()
+	end)
+	controls.search = new("EditControl"):EditControl({"LEFT", controls.category, "RIGHT"}, {16, 0, 180, 20}, "", "Search", nil, nil, function(buf)
+		state.search = buf:lower()
+		relist()
+	end, nil, nil, true)
+	controls.list = new("CurrencyPriceListControl"):CurrencyPriceListControl({"TOPLEFT", nil, "TOPLEFT"}, {20, 50, popupWidth - 40, popupHeight - 120}, rows)
+	controls.status = new("LabelControl"):LabelControl({"BOTTOMLEFT", nil, "BOTTOMLEFT"}, {20, -42, 0, 16}, "^8Loading Currency Exchange prices...")
+	controls.close = new("ButtonControl"):ButtonControl({"BOTTOM", nil, "BOTTOM"}, {0, -10, 90, 20}, "Close", function()
+		main:ClosePopup()
+	end)
+	main:OpenPopup(popupWidth, popupHeight, "Currency Exchange Prices", controls, nil, "search", "close")
+
+	currencyExchange.Fetch(realm, function(data, errMsg)
+		state.data = data
+		if not data then
+			controls.status.label = "^1Currency Exchange prices unavailable" .. (errMsg and (": " .. errMsg) or "")
+			return
+		end
+		local leagues = currencyExchange.LeagueList(data)
+		state.league = currencyExchange.PickLeague(data, currencyExchange.selectedLeague, self.pbLeague)
+		controls.league:SetList(leagues)
+		for index, league in ipairs(leagues) do
+			if league == state.league then
+				controls.league:SetSel(index, true)
+			end
+		end
+		local categories = { "All categories" }
+		for _, category in ipairs(data.categories) do
+			t_insert(categories, category)
+		end
+		controls.category:SetList(categories)
+		controls.category:SetSel(1, true)
+		state.category = nil
+		controls.status.label = s_format("^8%s snapshot for %s (hourly, from the in-game Currency Exchange)%s", realm:upper(),
+			os.date("%Y-%m-%d %H:00", data.snapshotTime), errMsg and (colorCodes.WARNING .. "  " .. errMsg) or "")
+		relist()
+	end)
 end
 
 -- Popup to set stat weight multipliers for sorting

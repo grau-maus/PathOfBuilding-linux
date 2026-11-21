@@ -77,6 +77,7 @@ describe("TradeQuery Currency Conversion", function()
 		local origDownloadPage, cxResponse
 
 		before_each(function()
+			require("Classes.CurrencyExchange").Reset()
 			mock_tradeQuery.pbRealm = "pc"
 			mock_tradeQuery.controls.pbNotice = {}
 			origDownloadPage = launch.DownloadPage

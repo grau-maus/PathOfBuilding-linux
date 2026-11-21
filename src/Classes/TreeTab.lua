@@ -16,6 +16,7 @@ local m_floor = math.floor
 local m_abs = math.abs
 local s_format = string.format
 local tradeHelpers = require("Classes.TradeHelpers")
+local currencyExchange = require("Classes.CurrencyExchange")
 local dkjson = require "dkjson"
 
 ---@class TreeTab: ControlHost
@@ -874,6 +875,8 @@ function TreeTabClass:ModifyNodePopup(selectedNode)
 				end
 				t_insert(modGroups, {
 				label = node.dn .. "                                                " .. table.concat(node.sd, ","),
+				name = node.dn,
+				sdText = table.concat(node.sd, ","),
 				descriptions = descriptionsAndReminders,
 				id = id,
 				})
@@ -881,6 +884,33 @@ function TreeTabClass:ModifyNodePopup(selectedNode)
 		end
 		table.sort(modGroups, function(a, b) return a.label < b.label end)
 		end
+	-- Currency Exchange prices for each tattoo/runegraft, filled in once the hourly snapshot is available
+	local cx = { status = "Currency Exchange: loading prices..." }
+	local function applyPrices()
+		for _, modGroup in ipairs(modGroups) do
+			modGroup.price = cx.data and currencyExchange.PriceByName(cx.data, cx.league, modGroup.name)
+			local priceText = modGroup.price and ("  (" .. currencyExchange.FormatPrice(modGroup.price) .. ")") or ""
+			modGroup.label = modGroup.name .. priceText .. "                                                " .. modGroup.sdText
+		end
+	end
+	-- lines describing the selected option's price, wrapped to fit the popup
+	local function priceLines(modGroup)
+		local lines = { }
+		local function addGrey(text)
+			for _, line in ipairs(main:WrapString(text, 16, 375)) do
+				t_insert(lines, "^8" .. line)
+			end
+		end
+		if not cx.data then
+			addGrey(cx.status)
+		elseif modGroup and modGroup.price then
+			t_insert(lines, "^7Currency Exchange: " .. colorCodes.CURRENCY .. currencyExchange.FormatPriceLong(modGroup.price))
+			addGrey(s_format("%d in stock in %s, last hour", modGroup.price.stock, cx.league))
+		else
+			addGrey("No Currency Exchange price in " .. tostring(cx.league))
+		end
+		return lines
+	end
 	local function addModifier(selectedNode)
 		local newTattooNode = self.build.spec.tree.tattoo.nodes[modGroups[controls.modSelect.selIndex].id]
 		newTattooNode.id = selectedNode.id
@@ -907,8 +937,11 @@ function TreeTabClass:ModifyNodePopup(selectedNode)
 				t_insert(wrapTable, wrappedDesc)
 			end
 		end
+		for _, line in ipairs(priceLines(modGroup)) do
+			t_insert(wrapTable, line)
+		end
 		for idx, desc in ipairs(wrapTable) do
-			controls[idx] = new("LabelControl"):LabelControl({"TOPLEFT", controls[idx-1] or controls.modSelect,"TOPLEFT"}, {0, 20, 600, 16}, "^7"..desc)
+			controls[idx] = new("LabelControl"):LabelControl({"TOPLEFT", controls[idx-1] or controls.modSelect,"TOPLEFT"}, {0, 20, 600, 16}, (desc:match("^%^") and "" or "^7")..desc)
 			totalHeight = totalHeight + 20
 		end
 		main.popups[1].height = totalHeight + 75
@@ -928,6 +961,11 @@ function TreeTabClass:ModifyNodePopup(selectedNode)
 		if mode ~= "OUT" and value then
 			for _, line in ipairs(value.descriptions) do
 				tooltip:AddLine(16, "^7"..line)
+			end
+			if value.price then
+				for _, line in ipairs(priceLines(value)) do
+					tooltip:AddLine(16, line)
+				end
 			end
 		end
 	end
@@ -986,13 +1024,48 @@ function TreeTabClass:ModifyNodePopup(selectedNode)
 	end
 	controls.totalTattoos = new("ButtonControl"):ButtonControl(nil, { 0, 95, 145, 20 }, "^7Tattoo Count: ".. getTattooCount() .."/50", function() return end)
 	controls.totalTattoos.tooltipFunc = function(tooltip, mode, index, value) getTattooCount(tooltip) end
-	main:OpenPopup(600, 105, "Replace Modifier of Node", controls, "save")
+	local popup = main:OpenPopup(600, 105, "Replace Modifier of Node", controls, "save")
 	constructUI(modGroups[self.defaultTattoo[nodeName] or 1])
+	local function refreshUI()
+		-- the popup may have been closed while downloading
+		if main.popups[1] == popup and modGroups[controls.modSelect.selIndex] then
+			constructUI(modGroups[controls.modSelect.selIndex])
+		end
+	end
+	-- League for the prices; the choice is remembered for the session and shared with the Trader's price lookup
+	controls.cxLeague = new("DropDownControl"):DropDownControl({"RIGHT", controls.totalTattoos, "LEFT"}, {-12, 0, 130, 20}, { }, function(index, value)
+		cx.league = value
+		currencyExchange.selectedLeague = value
+		applyPrices()
+		refreshUI()
+	end)
+	controls.cxLeague.enabled = function()
+		return #controls.cxLeague.list > 1
+	end
+	controls.cxLeague.tooltipText = "League for Currency Exchange prices"
+	controls.cxLeagueLabel = new("LabelControl"):LabelControl({"RIGHT", controls.cxLeague, "LEFT"}, {-4, 0, 0, 16}, "^7League:")
+	local tradeQuery = self.build.itemsTab and self.build.itemsTab.tradeQuery
+	local realm = tradeQuery and tradeQuery.pbRealm ~= "" and tradeQuery.pbRealm or "pc"
+	currencyExchange.Fetch(realm, function(data, errMsg)
+		cx.data = data
+		cx.league = currencyExchange.PickLeague(data, currencyExchange.selectedLeague, tradeQuery and tradeQuery.pbLeague)
+		cx.status = "Currency Exchange prices unavailable" .. (errMsg and (": " .. errMsg) or "")
+		local leagues = currencyExchange.LeagueList(data)
+		controls.cxLeague:SetList(leagues)
+		for index, league in ipairs(leagues) do
+			if league == cx.league then
+				controls.cxLeague:SetSel(index, true)
+			end
+		end
+		applyPrices()
+		refreshUI()
+	end)
 	
 	-- Show Legacy Tattoos
 	controls.showLegacyTattoo = new("CheckBoxControl"):CheckBoxControl({ "LEFT", controls.totalTattoos, "RIGHT" }, { 195, 0, 20 }, "Show Legacy Tattoos:", function(state)
 		self.showLegacyTattoo = state
 		buildMods(selectedNode)
+		applyPrices()
 	end)
 	controls.showLegacyTattoo.state = self.showLegacyTattoo
 end

@@ -28,6 +28,10 @@
     * **ConfigTab.lua**
     * **Control.lua**
     * **ControlHost.lua**
+    * **CurrencyExchange.lua**
+        Downloads the game's hourly Currency Exchange snapshot (no login needed) and prices every currency item in chaos and divine orbs per league, using each item's busiest market. Shared by the Trader's currency conversion, the Trader's "Currency prices..." lookup and the tattoo/runegraft picker in the Tree tab.
+    * **CurrencyPriceListControl.lua**
+        Sortable list (item, category, chaos, divine, stock) shown by the Trader's "Currency prices..." lookup.
     * **DropDownControl.lua**
     * **EditControl.lua**
     * **FolderListControl.lua**
