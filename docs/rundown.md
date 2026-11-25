@@ -180,7 +180,7 @@
 * **update_manifest.py**
     Generates SHA-1 hashes for files in `manifest.xml`.
     New files have to be manually added to `manifest.xml` to be processed.
-    In this fork, it writes update URLs pointing at `grau-maus/PathOfBuilding-linux`, and `manifest.cfg` excludes the Linux `.so` files.
+    In this fork, it writes update URLs pointing at `grau-maus/PathOfBuilding-linux`, skips every directory named in the comma-separated `POB_MANIFEST_EXCLUDE_DIRS` environment variable (falling back to a local `.env` file), and `manifest.cfg` excludes the Linux `.so` files.
 * **UpdateApply.lua**
     Consumes and applies table of update instructions. On Windows, updating the runtime itself is done from a separate host environment.
 * **UpdateCheck.lua**

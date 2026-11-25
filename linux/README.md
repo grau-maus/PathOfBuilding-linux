@@ -203,10 +203,15 @@ the check elsewhere, which is useful for testing against a local server.
 - **Linux filtering:** on Linux, `src/UpdateCheck.lua` skips every Windows binary (`runtime="win32"`, `.dll`,
   `.exe`). It downloads the remaining files. When the user clicks **Update Ready**, PoB applies them in place and
   restarts inside the same process.
+- **Local-only files stay out:** `update_manifest.py` skips every directory named in the comma-separated
+  `POB_MANIFEST_EXCLUDE_DIRS` environment variable (or in a local `.env` file when the variable is unset), at any
+  depth. Local tools and notes therefore never enter `manifest.xml`, and their directory names are not listed in the
+  repository.
 - **Pushing to `master` ships to users.** Installed copies check for updates at launch and every 12 hours while
-  open. Before pushing, regenerate the manifest:
+  open. Before pushing, set `POB_MANIFEST_EXCLUDE_DIRS` to your local-only directories (comma-separated) and
+  regenerate the manifest:
   ```bash
-  python3 update_manifest.py --in-place
+  POB_MANIFEST_EXCLUDE_DIRS="<dirs>" python3 update_manifest.py --in-place
   ```
   If the hashes in `manifest.xml` don't match the files on `master`, installs re-download the mismatched files on
   every check.
@@ -228,7 +233,7 @@ ways, and both are visible to users:
 ```bash
 git remote add upstream https://github.com/PathOfBuildingCommunity/PathOfBuilding.git   # once
 git fetch upstream
-git checkout master && git merge upstream/master
+git checkout dev && git merge upstream/dev
 ```
 
 1. **Resolve `manifest.xml` conflicts** by taking upstream's file. Expect a conflict on the `<Source>` lines every
@@ -236,7 +241,8 @@ git checkout master && git merge upstream/master
 2. **Check whether the merge touched `src/UpdateCheck.lua`.** If it did, make sure the Linux handling survived:
    `windowsHost` and `skipFileOnHost`.
 3. **Check whether the merge changed `runtime/*.dll`.** If it did, update the engine first (below).
-4. **Run `python3 update_manifest.py --in-place`**, then smoke-test, then push.
+4. **Regenerate the manifest** with `POB_MANIFEST_EXCLUDE_DIRS` set (see *How updates reach Linux installs*),
+   then smoke-test, then push `dev` and fast-forward `master` from it (see [RELEASE.md](../RELEASE.md)).
 5. **Tag a release** if the upstream version changed (`v<new version>-linux.1`), so AppImage users get it too.
 
 **Syncing the engine** (the SimpleGraphic fork):

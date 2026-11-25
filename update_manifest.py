@@ -4,12 +4,18 @@ import configparser
 import fnmatch
 import hashlib
 import logging
+import os
 import pathlib
 import re
 import xml.etree.ElementTree as Et
 from typing import Any, Callable
 
 alphanumeric_pattern = re.compile(r"(\d+)")
+
+# Linux fork: specific local-only directories that must never enter the manifest are named in this environment
+# variable instead of this published file. It takes a comma-separated list of directory names, matched
+# case-insensitively at any depth. Directory names are deliberately not listed here, for privacy.
+excluded_directories_env = "POB_MANIFEST_EXCLUDE_DIRS"
 
 
 def _exclude_file(file_patterns: set[str], path: pathlib.Path) -> bool:
@@ -24,6 +30,46 @@ def _exclude_directory(directory_names: set[str], path: pathlib.Path) -> bool:
         or all(a == b for a, b in zip(directory.split("/"), path.parts))
         for directory in directory_names
     )
+
+
+def _parse_env_file(path: pathlib.Path) -> dict[str, str]:
+    """Parse simple KEY=VALUE lines from a local .env file; a missing or unreadable file yields no entries."""
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return {}
+    entries: dict[str, str] = {}
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        if key.startswith("export "):
+            key = key[len("export "):].strip()
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+            value = value[1:-1]
+        entries[key] = value
+    return entries
+
+
+def _parse_excluded_directories() -> set[str]:
+    """Directory names to keep out of the manifest.
+
+    Taken from the POB_MANIFEST_EXCLUDE_DIRS environment variable; when that is unset, a local .env file is used so
+    the names stay out of this published file.
+    """
+    value = os.environ.get(excluded_directories_env)
+    if value is None:
+        value = _parse_env_file(pathlib.Path(".env")).get(excluded_directories_env, "")
+    entries = (entry.strip().strip("/").lower() for entry in value.split(","))
+    return {entry for entry in entries if entry}
+
+
+def _is_excluded_path(path: pathlib.Path, excluded_directories: set[str]) -> bool:
+    """Whether the path is one of, or inside one of, the excluded directories."""
+    return any(part.lower() in excluded_directories for part in path.parts)
 
 
 def _parse_list_option(config: configparser.ConfigParser, section: str, option: str) -> set[str]:
@@ -87,6 +133,7 @@ def create_manifest(version: str | None = None, replace: bool = False) -> None:
         parts.append(attributes)
 
     files: list[dict[str, str]] = []
+    excluded_directories = _parse_excluded_directories()
     for section in config.sections():
         include_files = _parse_list_option(config, section, "include-files")
         include_dirs = _parse_list_option(config, section, "include-directories")
@@ -94,6 +141,8 @@ def create_manifest(version: str | None = None, replace: bool = False) -> None:
         exclude_dirs = _parse_list_option(config, section, "exclude-directories")
         source = pathlib.Path(config[section]["path"])
         for path in source.glob("**/*.*"):
+            if _is_excluded_path(path, excluded_directories):
+                continue
             if include_files and not _exclude_file(include_files, path):
                 continue
             if include_dirs and not _exclude_directory(include_dirs, path):

@@ -6,7 +6,7 @@ This repository is the Linux fork. Releasing here means **pushing to `master`**.
 program files from that branch, and the change reaches users at their next launch or within 12 hours. The full guide
 is in [linux/README.md](linux/README.md#for-maintainers); this is the checklist:
 
-1. Merge upstream into `master` (`git fetch upstream && git merge upstream/master`).
+1. Merge upstream into `dev` (`git fetch upstream && git merge upstream/dev`).
    - On `manifest.xml` conflicts, take upstream's file; step 4 regenerates it.
    - If `src/UpdateCheck.lua` changed, check that the Linux handling (`windowsHost`, `skipFileOnHost`) survived.
 2. If the merge changed `runtime/*.dll`, upstream moved to a new engine. Merge upstream into
@@ -14,8 +14,11 @@ is in [linux/README.md](linux/README.md#for-maintainers); this is the checklist:
    `linux/build-simplegraphic.sh`, check the glibc baseline, and commit the rebuilt `runtime/` binaries in the same
    push.
 3. Smoke-test with `./PathOfBuilding.sh`: the tree renders, a build imports from a link, and the window closes cleanly.
-4. Run `python3 update_manifest.py --in-place`. Do this after every change, or installs will see hash mismatches.
-5. Push to `master`. This ships to installer (git) users.
+4. Run `python3 update_manifest.py --in-place`, with `POB_MANIFEST_EXCLUDE_DIRS` set to the local-only directories
+   (comma-separated, or provided by a local `.env` file; see
+   [linux/README.md](linux/README.md#how-updates-reach-linux-installs)). Do this after every change, or installs
+   will see hash mismatches.
+5. Push `dev`, fast-forward `master` from it, and push `master`. This ships to installer (git) users.
 6. Tag and push a Linux release, for example `git tag v2.68.1-linux.1 && git push origin v2.68.1-linux.1`.
    The **Linux AppImage release** workflow checks, builds, smoke-tests and publishes the AppImage, and AppImage
    users then update to it. Use the `manifest.xml` version plus a Linux revision that counts up from 1. See
