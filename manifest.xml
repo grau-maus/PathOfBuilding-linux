@@ -5,7 +5,7 @@
 	<Source part="runtime" platform="win32" url="https://raw.githubusercontent.com/grau-maus/PathOfBuilding-linux/{branch}/runtime/" />
 	<Source part="program" url="https://raw.githubusercontent.com/grau-maus/PathOfBuilding-linux/{branch}/src/" />
 	<Source part="tree" url="https://raw.githubusercontent.com/grau-maus/PathOfBuilding-linux/{branch}/src/" />
-	<File name="changelog.txt" part="default" sha1="0358c1360dd791fd0752ce2ffb1249509a230fa8" />
+	<File name="changelog.txt" part="default" sha1="6b1956d218faaa959c0ebe3a28aa2e793fd0e3c0" />
 	<File name="help.txt" part="default" sha1="e486cb63a78f5ca355430b67fa23e02fd30f5771" />
 	<File name="LICENSE.md" part="default" sha1="c77635aa1ba0a2ffe8eb72f93b3376e3a3d2041a" />
 	<File name="Assets/ascendancypassiveheaderleft.png" part="program" sha1="6a65683dcc3b14382dc083198fe9361454e91b15" />
